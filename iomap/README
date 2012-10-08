@@ -1,0 +1,13 @@
+step 1.
+	sudo  mknod  /dev/iomap0  c  42  0
+	sudo  mknod  /dev/iomap1  c  42  1
+step 2.
+	sudo  insmod remap.ko
+step 3:
+	sudo  ./test
+	
+
+get video card mem addr:
+	cat /proc/iomem | grep Video
+get video card mem:
+	cat /dev/fb* > fb

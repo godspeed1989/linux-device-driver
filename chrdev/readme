@@ -1,0 +1,16 @@
+compile:
+    make
+insert:
+    sudo insmod rwbuf.ko
+remove:
+    sudo rmmod rwbuf
+show:
+    cat /proc/devices | grep ChrDev
+    cat /proc/modules | grep rwbuf
+mknod:
+    sudo mknod /dev/rwbuf c 255 0
+
+test:just can test one time
+    sudo ./test /dev/rwbuf 13081198
+
+

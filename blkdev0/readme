@@ -1,0 +1,26 @@
+//	|
+bool blk_end_request_cur(struct request *rq, int error)
+bool __blk_end_request_cur(struct request *rq, int error)
+{	return __blk_end_request(rq, error, blk_rq_cur_bytes(rq));	}
+//	|
+bool blk_end_request(struct request *rq, int error, unsigned int nr_bytes)
+bool __blk_end_request(struct request *rq, int error, unsigned int nr_bytes)
+{	return __blk_end_bidi_request(rq, error, nr_bytes, 0);	}
+//	|
+bool blk_end_bidi_request(struct request *rq, int error, unsigned int nr_bytes, unsigned int bidi_bytes)
+bool __blk_end_bidi_request(struct request *rq, int error, unsigned int nr_bytes, unsigned int bidi_bytes)
+{
++	struct request_queue *q = rq->q;
++	unsigned long flags;
+
+	if (blk_update_bidi_request(rq, error, nr_bytes, bidi_bytes))
+		return true;
+
++	spin_lock_irqsave(q->queue_lock, flags);
+	blk_finish_request(rq, error);
++	spin_unlock_irqrestore(q->queue_lock, flags);
+
+	return false;
+}
+
+/*---------------------------------------------------------------*/

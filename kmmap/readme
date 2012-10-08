@@ -1,0 +1,11 @@
+compile:
+	make
+insert:
+	sudo insmod kmmap.ko
+mknod:
+	sudo mknod /tmp/kmmap c 250 0
+test:
+	sudo ./km_test
+remove:
+	sudo rmmod kmmap
+

@@ -1,0 +1,12 @@
+compile:
+	make
+insert:
+	sudo insmod bh.ko
+mknod:
+	sudo mknod /tmp/bh c 250 0
+test:
+	sudo ./read
+	sudo ./write
+remove:
+	sudo rmmod bh
+
