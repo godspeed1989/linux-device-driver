@@ -3,8 +3,6 @@
 
 #include <linux/module.h>
 #include <linux/fs.h>
-#include <linux/sched.h>
-#include <linux/list.h>
 
 #define DEV_NUM  250
 #define MOD_NAME "ls_proc"

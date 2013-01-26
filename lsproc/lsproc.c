@@ -1,12 +1,15 @@
 #include "lsproc.h"
-#include "cmd.h"
+#include "share.h"
+#include <linux/list.h>
+#include <linux/sched.h>
+#include <asm/uaccess.h>
 
 static struct file_operations lsproc_fops =
 {
 	.owner	=	THIS_MODULE,
 	.open	=	lsproc_open,
 	.read	=	lsproc_read,
-	.compat_ioctl	=	lsproc_ioctl,
+	.unlocked_ioctl	=	lsproc_ioctl,
 };
 
 int __init lsproc_init(void)
@@ -47,28 +50,35 @@ static ssize_t lsproc_read(struct file *filep,
 	return 0;
 }
 
-static void proc_tree(unsigned long ptr)
+/**
+ *
+ */
+static Proc P[MAX_PROC];
+static int nr_proc;
+
+static void get_proc_info(void)
 {
-	struct list_head *ele;
+	int i;
+	struct list_head *ele, *head;
 	struct task_struct *task;
-	MSG();
-	list_for_each(ele, &current->tasks)
+	head = &current->tasks;
+	for(ele = head->next, i=0; ele != head && i<MAX_PROC-1; ele = ele->next, i++)
 	{
 		task = list_entry(ele, struct task_struct, tasks);
-		printk("%d %s\n", task->pid, task->comm);
+		P[i].pid = task->pid;
+		P[i].ppid = task->real_parent->pid;
+		strcpy(P[i].comm, task->comm);
 	}
+	P[i].comm[0] = '\0';
+	nr_proc = i;
 }
 
-static void proc_tree_grp(unsigned long ptr)
+static void get_proc_tree(unsigned long ptr)
 {
-	struct list_head *ele;
-	struct task_struct *task;
 	MSG();
-	list_for_each(ele, &current->tasks)
-	{
-		task = list_entry(ele, struct task_struct, tasks);
-		printk("%d %s\n", task->pid, task->comm);
-	}
+	get_proc_info();
+	DPRINTF("%d proccess(es)\n", nr_proc);
+	copy_to_user((void*)ptr, (void*)P, nr_proc*sizeof(Proc));
 }
 
 static void proc_memstat(unsigned long pid)
@@ -90,12 +100,9 @@ static long lsproc_ioctl(struct file *filep,
 	switch(cmd)
 	{
 		case PROC_TREE:
-			proc_tree(arg);
+			get_proc_tree(arg);
 			break;
-		case THREAD_GRP:
-			proc_tree_grp(arg);
-			break;
-		case MEM_STAT:
+		case PROC_MEM_STAT:
 			proc_memstat(arg);
 			break;
 		case PROC_DETAIL:
