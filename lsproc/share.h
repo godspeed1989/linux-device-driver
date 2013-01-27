@@ -10,7 +10,8 @@
 
 typedef struct Proc
 {
-	pid_t pid, ppid;
+	pid_t pid, ppid, tgid, tid;
+	int nr_tgrp;
 	char comm[TASK_COMM_LEN];
 }Proc;
 

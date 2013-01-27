@@ -58,16 +58,22 @@ static int nr_proc;
 
 static void get_proc_info(void)
 {
-	int i;
-	struct list_head *ele, *head;
+	int i, j;
+	struct list_head *ele, *head, *pos, *tgrp;
 	struct task_struct *task;
+	
 	head = &current->tasks;
 	for(ele = head->next, i=0; ele != head && i<MAX_PROC-1; ele = ele->next, i++)
 	{
 		task = list_entry(ele, struct task_struct, tasks);
 		P[i].pid = task->pid;
 		P[i].ppid = task->real_parent->pid;
+		P[i].tgid = task->tgid;
+		P[i].tid = task_pid_vnr(task);
 		strcpy(P[i].comm, task->comm);
+		tgrp = &current->thread_group;
+		for(pos = tgrp->next, j=0; pos != tgrp; pos = pos->next, j++);
+		P[i].nr_tgrp = j;
 	}
 	P[i].comm[0] = '\0';
 	nr_proc = i;

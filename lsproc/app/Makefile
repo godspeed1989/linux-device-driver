@@ -3,7 +3,7 @@ TARGET=pstree
 
 all: $(TARGET)
 
-$(TARGET): $(TARGET).c
+$(TARGET): $(TARGET).c ../share.h
 	$(CC) -g $< -o $@
 
 run:
