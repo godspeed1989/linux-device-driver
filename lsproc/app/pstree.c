@@ -20,8 +20,8 @@ int main(int argc, const char *argv[])
 		return -1;
 	}
 	
-	//print_pstree(fd);
-	print_pstgrp(fd);
+	print_pstree(fd);
+	//print_pstgrp(fd);
 	close(fd);
 	return 0;
 }
@@ -39,9 +39,9 @@ static void print_tree(int idx, int depth, int flag)
 			printf(" "INDENT);
 	
 	if(flag)
-		printf("└─%d [%s]\n", P[idx].pid, P[idx].comm);
+		printf("└─%d {%s}\n", P[idx].pid, P[idx].comm);
 	else
-		printf("├─%d [%s]\n", P[idx].pid, P[idx].comm);
+		printf("├─%d {%s}\n", P[idx].pid, P[idx].comm);
 	j = 0;
 	/* list children proccess(es) */
 	for(i=0; i<MAX_PROC && P[i].comm[0] != '\0'; i++)
@@ -86,21 +86,23 @@ void print_pstgrp(int fd)
 {
 	int i, j;
 	ioctl(fd, PROC_TREE, P);
-	memset(ignore, 0, sizeof(char)*MAX_PROC);
 	for(i=0; i<MAX_PROC && P[i].comm[0] != '\0'; i++)
 	{
-		if(!ignore[i])
+		printf("├─%d {%s}", P[i].tgid, P[i].comm);
+		if(P[i].nr_tgrp != 0)
 		{
-			ignore[i] = 1;
-			printf("├─%d [%s] %d\n", P[i].tgid, P[i].comm, P[i].tid);
-			for(j=i+1; j<MAX_PROC && P[j].comm[0] != '\0'; j++)
+			printf("*%d\n", P[i].nr_tgrp);
+			for(j=0; j<P[i].nr_tgrp; j++)
 			{
-				if(!ignore[j] && P[i].tgid == P[j].tgid)
-				{
-					ignore[j] = 1;
-					printf("├─%d [%s] %d\n", P[i].tgid, P[i].comm, P[i].tid);
-				}
+				if(j+1 != P[i].nr_tgrp)
+					printf("  ├─");
+				else
+					printf("  └─");
+				printf("%d [%s]\n", P[i].tgrp[j].pid, P[i].tgrp[j].comm);
 			}
+		}
+		else
+		{
 			printf("\n");
 		}
 	}

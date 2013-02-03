@@ -39,8 +39,8 @@ static void restore(void)
 
 static void play_sound(void)
 {
+	enable();
 	setup_freq(1000);
- 	enable();
 }
 
 int __init pcsp_init(void)

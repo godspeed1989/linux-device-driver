@@ -60,7 +60,7 @@ static void get_proc_info(void)
 {
 	int i, j;
 	struct list_head *ele, *head, *pos, *tgrp;
-	struct task_struct *task;
+	struct task_struct *task, *temp;
 	
 	head = &current->tasks;
 	for(ele = head->next, i=0; ele != head && i<MAX_PROC-1; ele = ele->next, i++)
@@ -69,10 +69,14 @@ static void get_proc_info(void)
 		P[i].pid = task->pid;
 		P[i].ppid = task->real_parent->pid;
 		P[i].tgid = task->tgid;
-		P[i].tid = task_pid_vnr(task);
 		strcpy(P[i].comm, task->comm);
-		tgrp = &current->thread_group;
-		for(pos = tgrp->next, j=0; pos != tgrp; pos = pos->next, j++);
+		tgrp = &task->thread_group;
+		for(pos = tgrp->next, j=0; pos != tgrp; pos = pos->next, j++)
+		{
+			temp = list_entry(pos, struct task_struct, thread_group);
+			P[i].tgrp[j].pid = temp->pid;
+			strcpy(P[i].tgrp[j].comm, temp->comm);
+		}
 		P[i].nr_tgrp = j;
 	}
 	P[i].comm[0] = '\0';
