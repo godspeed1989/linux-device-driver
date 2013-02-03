@@ -34,28 +34,10 @@ void __exit lsproc_exit(void)
 module_exit(lsproc_exit);
 
 /**
- * file operations impliment
- */
-
-static int lsproc_open(struct inode *inode, struct file *filep)
-{
-	MSG();
-	DPRINTF("opener pid=%d [%s]\n", current->pid, current->comm);
-	return 0;
-}
-
-static ssize_t lsproc_read(struct file *filep,
-                           char *buf, size_t count, loff_t *ppos)
-{
-	return 0;
-}
-
-/**
- *
+ * get proccess tree information
  */
 static Proc P[MAX_PROC];
 static int nr_proc;
-
 static void get_proc_info(void)
 {
 	int i, j;
@@ -82,7 +64,6 @@ static void get_proc_info(void)
 	P[i].comm[0] = '\0';
 	nr_proc = i;
 }
-
 static void get_proc_tree(unsigned long ptr)
 {
 	MSG();
@@ -91,16 +72,46 @@ static void get_proc_tree(unsigned long ptr)
 	copy_to_user((void*)ptr, (void*)P, nr_proc*sizeof(Proc));
 }
 
+/**
+ * get proccess memory layout infomation
+ */
+static mm_info mminfo;
 static void proc_memstat(unsigned long pid)
 {
 	struct task_struct *task;
 	MSG();
 	task = pid_task(find_vpid(pid), PIDTYPE_PID);
+	if(task == NULL)
+		task = current;
+	mminfo.start_code = task->mm->start_code;
+	mminfo.end_code = task->mm->end_code;
+	mminfo.start_data = task->mm->start_data;
+	mminfo.end_data = task->mm->end_data;
+	mminfo.start_brk = task->mm->start_brk;
+	mminfo.brk = task->mm->brk;
+	mminfo.start_stack = task->mm->start_stack;
+	mminfo.arg_start = task->mm->arg_start;
+	mminfo.arg_end = task->mm->arg_end;
+	mminfo.env_start = task->mm->env_start;
+	mminfo.env_end = task->mm->env_end;
 }
 
-static void proc_detail(unsigned long pid)
+/**
+ * file operations impliment
+ */
+static int lsproc_open(struct inode *inode, struct file *filep)
 {
 	MSG();
+	DPRINTF("opener pid=%d [%s]\n", current->pid, current->comm);
+	return 0;
+}
+
+static ssize_t lsproc_read(struct file *filep,
+                           char *buf, size_t count, loff_t *ppos)
+{
+	MSG();
+	copy_to_user(buf, &mminfo, sizeof(mminfo));
+	return 0;
 }
 
 static long lsproc_ioctl(struct file *filep,
@@ -109,14 +120,11 @@ static long lsproc_ioctl(struct file *filep,
 	MSG();
 	switch(cmd)
 	{
-		case PROC_TREE:
+		case PROC_TREE: case PROC_TGRP:
 			get_proc_tree(arg);
 			break;
-		case PROC_MEM_STAT:
+		case PROC_MEM_STAT: case PROC_DETAIL:
 			proc_memstat(arg);
-			break;
-		case PROC_DETAIL:
-			proc_detail(arg);
 			break;
 		default:
 			break;

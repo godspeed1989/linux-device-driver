@@ -2,13 +2,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #define DEV_PATH "/dev/lsproc"
 #define INDENT "    "
 
 static Proc P[MAX_PROC];
+static mm_info mminfo;
 void print_pstree(int fd);
 void print_pstgrp(int fd);
+void print_psinfo(int fd, pid_t pid);
 
 int main(int argc, const char *argv[])
 {
@@ -20,8 +23,9 @@ int main(int argc, const char *argv[])
 		return -1;
 	}
 	
-	print_pstree(fd);
+	//print_pstree(fd);
 	//print_pstgrp(fd);
+	print_psinfo(fd, getpid());
 	close(fd);
 	return 0;
 }
@@ -60,7 +64,6 @@ static void print_tree(int idx, int depth, int flag)
 	}
 	ignore[depth+1] = 0;
 }
-
 /**
  * print process tree by pid
  */
@@ -85,12 +88,12 @@ void print_pstree(int fd)
 void print_pstgrp(int fd)
 {
 	int i, j;
-	ioctl(fd, PROC_TREE, P);
+	ioctl(fd, PROC_TGRP, P);
 	for(i=0; i<MAX_PROC && P[i].comm[0] != '\0'; i++)
 	{
-		printf("├─%d {%s}", P[i].tgid, P[i].comm);
 		if(P[i].nr_tgrp != 0)
 		{
+			printf("──┬─%d {%s}", P[i].tgid, P[i].comm);
 			printf("*%d\n", P[i].nr_tgrp);
 			for(j=0; j<P[i].nr_tgrp; j++)
 			{
@@ -103,8 +106,24 @@ void print_pstgrp(int fd)
 		}
 		else
 		{
-			printf("\n");
+			printf("────%d {%s}\n", P[i].tgid, P[i].comm);
 		}
 	}
+}
+
+/**
+ * print task's memory layout infomation
+ */
+void print_psinfo(int fd, pid_t pid)
+{
+	ioctl(fd, PROC_MEM_STAT, pid);
+	read(fd, &mminfo, sizeof(mminfo));
+	printf("%s pid=%d\n", (char*)mminfo.arg_start, getpid());
+	printf("code: %lx\n      %lx\n", mminfo.start_code, mminfo.end_code);
+	printf("data: %lx\n      %lx\n", mminfo.start_data, mminfo.end_data);
+	printf("brk:  %lx\n      %lx\n", mminfo.start_brk,  mminfo.brk);
+	printf("stack:%lx\n", mminfo.start_stack);
+	printf("args: %lx\n      %lx\n", mminfo.arg_start, mminfo.arg_end);
+	printf("env:  %lx\n      %lx\n", mminfo.env_start, mminfo.env_end);
 }
 
