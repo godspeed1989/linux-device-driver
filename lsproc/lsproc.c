@@ -19,7 +19,7 @@ int __init lsproc_init(void)
 	retn = register_chrdev(DEV_NUM, MOD_NAME, &lsproc_fops);
 	if(retn)
 	{
-		DPRINTF( MOD_NAME" register error\n");
+		DPRINTF(MOD_NAME" register error\n");
 		return -EIO;
 	}
 	return 0;
@@ -68,7 +68,7 @@ static void get_proc_tree(unsigned long ptr)
 {
 	MSG();
 	get_proc_info();
-	DPRINTF("%d proccess(es)\n", nr_proc);
+	DPRINTF("%d process(es)\n", nr_proc);
 	copy_to_user((void*)ptr, (void*)P, nr_proc*sizeof(Proc));
 }
 
@@ -78,22 +78,34 @@ static void get_proc_tree(unsigned long ptr)
 static mm_info mminfo;
 static void proc_memstat(unsigned long pid)
 {
-	struct task_struct *task;
+	struct pid* vpid = NULL;
+	struct task_struct *task = NULL;
 	MSG();
-	task = pid_task(find_vpid(pid), PIDTYPE_PID);
+	vpid = find_vpid(pid);
+	if(vpid)
+		task = pid_task(vpid, PIDTYPE_PID);
 	if(task == NULL)
 		task = current;
-	mminfo.start_code = task->mm->start_code;
-	mminfo.end_code = task->mm->end_code;
-	mminfo.start_data = task->mm->start_data;
-	mminfo.end_data = task->mm->end_data;
-	mminfo.start_brk = task->mm->start_brk;
-	mminfo.brk = task->mm->brk;
-	mminfo.start_stack = task->mm->start_stack;
-	mminfo.arg_start = task->mm->arg_start;
-	mminfo.arg_end = task->mm->arg_end;
-	mminfo.env_start = task->mm->env_start;
-	mminfo.env_end = task->mm->env_end;
+	DPRINTF("memstat pid=%d [%s]\n", task->pid, task->comm);
+	if(task->mm)
+	{
+		mminfo.start_code = task->mm->start_code;
+		mminfo.end_code = task->mm->end_code;
+		mminfo.start_data = task->mm->start_data;
+		mminfo.end_data = task->mm->end_data;
+		mminfo.start_brk = task->mm->start_brk;
+		mminfo.brk = task->mm->brk;
+		mminfo.start_stack = task->mm->start_stack;
+		mminfo.arg_start = task->mm->arg_start;
+		mminfo.arg_end = task->mm->arg_end;
+		mminfo.env_start = task->mm->env_start;
+		mminfo.env_end = task->mm->env_end;
+	}
+	else
+	{
+		memset(&mminfo, 0, sizeof(mm_info));
+	}
+	mminfo.pid = task->pid;
 }
 
 /**

@@ -27,6 +27,7 @@ typedef struct Proc
 
 typedef struct mm_info
 {
+	pid_t pid;
 	unsigned long start_code, end_code, start_data, end_data;
 	unsigned long start_brk, brk, start_stack;
 	unsigned long arg_start, arg_end, env_start, env_end;
