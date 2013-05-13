@@ -11,7 +11,7 @@ test: test.c
 	$(CC) -o $@ $<
 
 clean:
-	@rm -rf *.o *.mod.c .*.cmd *.markers *.order .tmp_versions *.symvers
+	@rm -rf test *.o *.mod.c .*.cmd *.markers *.order .tmp_versions *.symvers
 clean_all: clean
 	@rm -rf *.ko
 

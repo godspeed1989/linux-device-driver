@@ -1,4 +1,4 @@
-/* 将映射到内核地址空间的I/O地址，通过ioctl(IOMAP_SET)，二次映射到新的地址空间。
+/* 将已经映射到内核地址空间的I/O地址，通过ioctl(IOMAP_SET)，映射到新的地址空间。
  * 用户可通过read/write进行读写，也可以通过mmap进行映射。
  */
 #include <asm/io.h>
@@ -23,7 +23,7 @@ ssize_t iomap_read(struct file *file, char __user *buf,
 	char *tmp;
 	int minor = MINOR(file->f_dentry->d_inode->i_rdev);
 	struct Iomap *idev = iomap_dev[minor];
-
+	MSG("in iomap_read\n");
 	if(idev->base == 0) /* dev haven't been setup by 'IOMAP_SET'*/
 		return -ENXIO;
 	if(file->f_pos >= idev->size) /* beyond end */
@@ -31,7 +31,7 @@ ssize_t iomap_read(struct file *file, char __user *buf,
 	if(file->f_pos + count > idev->size) /*adjust beyond end*/
 		count = idev->size - file->f_pos;
 	tmp = (char*)kmalloc(count, GFP_KERNEL);
-	if(tmp==NULL)
+	if(tmp == NULL)
 		return -ENOMEM;
 
 	memcpy_fromio(tmp, idev->ptr+file->f_pos, count);
@@ -40,7 +40,7 @@ ssize_t iomap_read(struct file *file, char __user *buf,
 		return -EFAULT;
 	}
 	file->f_pos += count;
-	
+	MSG("read %d bytes\n", count);
 	kfree(tmp);
 	return count;
 }
@@ -51,7 +51,7 @@ ssize_t iomap_write(struct file *file, const char __user *buf,
 	char* tmp;
 	int minor =  MINOR(file->f_dentry->d_inode->i_rdev);
 	struct Iomap *idev = iomap_dev[minor];
-	
+	MSG("in iomap_write\n");
 	if(idev->base == 0) /* dev haven't been setup by 'IOMAP_SET'*/
 		return -ENXIO;
 	if(file->f_pos >= idev->size) /* beyond end */
@@ -59,7 +59,7 @@ ssize_t iomap_write(struct file *file, const char __user *buf,
 	if(file->f_pos + count > idev->size) /*adjust beyond end*/
 		count = idev->size - file->f_pos;
 	tmp = (char*)kmalloc(count, GFP_KERNEL);
-	if(tmp==NULL)
+	if(tmp == NULL)
 		return -ENOMEM;
 
 	if(copy_from_user(tmp, buf, count)) {
@@ -68,8 +68,15 @@ ssize_t iomap_write(struct file *file, const char __user *buf,
 	}
 	memcpy_toio(idev->ptr+file->f_pos, tmp, count);
 	file->f_pos += count;
-
+	MSG("write %d bytes\n", count);
 	return count;
+}
+
+loff_t iomap_llseek(struct file *file, loff_t loff_t, int len)
+{
+	MSG("seek to the start\n");
+	file->f_pos = 0;
+	return 0;
 }
 
 int iomap_mmap(struct file *file, struct vm_area_struct *vma)
@@ -85,11 +92,12 @@ int iomap_mmap(struct file *file, struct vm_area_struct *vma)
 	size = vma->vm_end - vma->vm_start;
 	if(size % PAGE_SIZE)
 		return -EINVAL;
-	/* remap_pfn_range (vma, vaddr, pfn, size, prot) */
-	# ifndef virt_to_pfn
-	# define virt_to_pfn(kaddr) (__pa(kaddr) >> PAGE_SHIFT)
-	# endif
+
+#ifndef virt_to_pfn
+#define virt_to_pfn(kaddr) (__pa(kaddr) >> PAGE_SHIFT)
+#endif
 	pfn = virt_to_pfn(idev->ptr);
+	/* remap_pfn_range (vma, vaddr, pfn, size, prot) */
 	ret = remap_pfn_range(vma, vma->vm_start, pfn,
 						  size, vma->vm_page_prot);
 	if(ret)
@@ -124,8 +132,7 @@ long iomap_ioctl(struct file *file, unsigned int cmd,
 				return -EFAULT;
 			}
 			MSG("ioctl: IOMAP_SET: minor %d\n", minor);
-			MSG("ioctl: IOMAP_SET: from 0x%lx len=0x%lx\n",
-										idev->base, idev->size);
+			MSG("ioctl: IOMAP_SET: from 0x%lx len=0x%lx\n", idev->base, idev->size);
 			return 0;
 		}
 		case IOMAP_GET: /* copy to user for getting */
@@ -173,11 +180,13 @@ int iomap_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-struct file_operations iomap_fops = {
+struct file_operations iomap_fops =
+{
 	.open = iomap_open,
 	.release = iomap_release,
 	.read = iomap_read,
 	.write = iomap_write,
+	.llseek = iomap_llseek,
 	.mmap = iomap_mmap,
 	.unlocked_ioctl = iomap_ioctl,
 };
@@ -191,7 +200,8 @@ int __init iomap_module_init(void)
 		return ret;
 	}
 	
-	for (i=0 ; i<IOMAP_MAX_DEVS ; i++) {
+	for (i=0 ; i<IOMAP_MAX_DEVS ; i++)
+	{
 		iomap_dev[i] = (struct Iomap*)kmalloc(sizeof(struct Iomap), GFP_KERNEL);
 		iomap_dev[i]->base = 0;
 	}
@@ -215,3 +225,4 @@ void __exit iomap_module_exit(void)
 }
 module_exit(iomap_module_exit);
 MODULE_LICENSE("GPL");
+
