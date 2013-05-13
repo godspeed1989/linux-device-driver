@@ -27,7 +27,7 @@ int main()
 	printf("mmap success map_addr = %x\n", (unsigned int)map_addr);
 
 	printf("map_addr[0] :%s\n", map_addr);
-	printf("map_addr[0+4096] :%s\n", (map_addr + MY_PAGE_SIZE));
+	printf("map_addr[0+%d] :%s\n", MY_PAGE_SIZE, (map_addr + MY_PAGE_SIZE));
 	printf("change the map_addr[0] to 'b7854ad4'.\n");
 	strcpy(map_addr, "b7854ad4\n");
 	printf("changed map_addr[0] :%s\n", map_addr);
