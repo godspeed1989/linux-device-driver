@@ -5,6 +5,8 @@
 
 #define  MSG(string, args...)  printk(DEVICE_NAME ": " string, ##args);
 
+struct resource * reg_res;
+unsigned long remap_size;
 void *reg_base_virt;
 
 static struct resource platform_rs[] = 
@@ -29,21 +31,34 @@ static struct platform_device platform_dev =
 
 static int platform_probe(struct platform_device *pdev)
 {
-	struct resource * reg_res;
 	MSG("platform_probe\n");
 	// get register resource info
 	reg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if(reg_res == NULL)
 		return -ENODEV;
-	reg_base_virt = ioremap_nocache(reg_res->start, reg_res->end-reg_res->start);
+	remap_size = reg_res->end - reg_res->start + 1;
+	// request region
+	if (!request_mem_region(reg_res->start, remap_size, pdev->name))
+		return -ENXIO;
+	reg_base_virt = ioremap_nocache(reg_res->start, remap_size);
 	if(reg_base_virt == NULL)
 		return -EBUSY;
+	return 0;
+}
+
+static int platform_remove(struct platform_device *pdev)
+{
+	/* Release mapped virtual address */
+	iounmap(reg_base_virt);
+	/* Release the region */
+	release_mem_region(reg_res->start, remap_size);
 	return 0;
 }
 
 static struct platform_driver platform_drv =
 {
 	.probe = platform_probe,
+	.remove = __devexit_p(platform_remove),
 	.driver = 
 	{
 		.owner = THIS_MODULE,
