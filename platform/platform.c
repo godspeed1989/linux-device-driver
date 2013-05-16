@@ -42,7 +42,10 @@ static int platform_probe(struct platform_device *pdev)
 		return -ENXIO;
 	reg_base_virt = ioremap_nocache(reg_res->start, remap_size);
 	if(reg_base_virt == NULL)
+	{
+		release_mem_region(reg_res->start, remap_size);
 		return -EBUSY;
+	}
 	return 0;
 }
 
