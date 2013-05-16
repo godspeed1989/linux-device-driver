@@ -9,7 +9,7 @@ struct resource * reg_res;
 unsigned long remap_size;
 void *reg_base_virt;
 
-static struct resource platform_rs[] = 
+static struct resource platform_rs[] =
 {
 	{
 		.start = 0x40030000,
@@ -55,6 +55,14 @@ static int platform_remove(struct platform_device *pdev)
 	return 0;
 }
 
+/* device match table to match with device node in device tree */
+static const struct of_device_id platform_of_match[] __devinitconst =
+{
+	{.compatible = DEVICE_NAME},
+	{},
+};
+MODULE_DEVICE_TABLE(of, platform_of_match);
+
 static struct platform_driver platform_drv =
 {
 	.probe = platform_probe,
@@ -63,6 +71,7 @@ static struct platform_driver platform_drv =
 	{
 		.owner = THIS_MODULE,
 		.name = DEVICE_NAME,
+		.of_match_table = platform_of_match
 	},
 };
 
@@ -85,6 +94,8 @@ module_init(platform_init);
 
 void __exit platform_exit(void)
 {
+	platform_device_unregister(&platform_dev);
+	platform_driver_unregister(&platform_drv);
 }
 module_exit(platform_exit);
 MODULE_LICENSE("GPL");
