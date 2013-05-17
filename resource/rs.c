@@ -1,30 +1,31 @@
 #include <linux/module.h>
+#include <linux/slab.h>
 
 #define DEVICE_NAME "my_resource"
 
 #define  MSG(string, args...)  printk(DEVICE_NAME ": " string, ##args);
 
-unsigned long remap_size = 0;
 void *reg_base_virt = NULL;
 
-static struct resource rs =
-{
-	.start = 0xdafde000,
-	.end   = 0xdafde000 + 0x0000ff,
-	.flags = IORESOURCE_MEM,
-};
+const resource_size_t rs_start = 0x000a0000;
+const resource_size_t remap_size = 0x00001000;
+static struct resource *res;
 
 int __init rs_init(void)
 {
 	/* Request region */
-	remap_size = rs.end - rs.start + 1;
-	if (!request_mem_region(rs.start, remap_size , DEVICE_NAME))
+	res = request_mem_region(rs_start, remap_size , DEVICE_NAME);
+	if (res == NULL)
+	{
+		MSG("request region error\n");
 		return -ENXIO;
+	}
 	/* Remap the region */
-	reg_base_virt = ioremap_nocache(rs.start, remap_size);
+	reg_base_virt = ioremap_nocache(res->start, remap_size);
 	if(reg_base_virt == NULL)
 	{
-		release_mem_region(rs.start, remap_size);
+		MSG("remap region error\n");
+		release_mem_region(res->start, remap_size);
 		return -EBUSY;
 	}
 	return 0;
@@ -33,12 +34,14 @@ module_init(rs_init);
 
 void __exit rs_exit(void)
 {
-	/* Release mapped virtual address */
-	if(reg_base_virt != NULL)
+	if(res != NULL)
 	{
+		/* Release mapped virtual address */
 		iounmap(reg_base_virt);
 		/* Release the region */
-		release_mem_region(rs.start, remap_size);
+		release_mem_region(res->start, remap_size);
+		/* free */
+		kfree(res);
 	}
 }
 module_exit(rs_exit);
