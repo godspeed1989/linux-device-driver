@@ -2,6 +2,8 @@
 #include <linux/slab.h>
 #include <linux/proc_fs.h>
 #include <linux/mman.h>
+#include "share.h"
+
 /*
 	Remap a RAM or I/O region to kernel virtual address space and
 	Export this region to user space through procfs.
@@ -17,8 +19,8 @@
 #define  MSG(string, args...)  printk(DEVICE_NAME ": " string, ##args)
 
 static void *rs_base_virt = NULL;
-const static resource_size_t rs_start = 0xD0000000;
-const static resource_size_t remap_size = 0x00800000;
+const static resource_size_t rs_start = 0xC0000000;
+const static resource_size_t remap_size = (NR_PAGES << PAGE_SHIFT);
 
 #define MAP_RAM
 
@@ -48,6 +50,7 @@ static int proc_rs_mmap(struct file *file, struct vm_area_struct *vma)
 		MSG("mmap size not page align error\n");
 		return -EINVAL;
 	}
+	MSG("mmap try to mmap %ld pages\n", size>>PAGE_SHIFT);
 #ifndef virt_to_pfn
 #define virt_to_pfn(kaddr) (__pa(kaddr) >> PAGE_SHIFT)
 #endif
@@ -59,7 +62,7 @@ static int proc_rs_mmap(struct file *file, struct vm_area_struct *vma)
 		MSG("mmap remap_pfn_range error\n");
 		return ret;
 	}
-	MSG("mmap %p to %lx (%lx)\n", rs_base_virt, vma->vm_start, size);
+	MSG("mmap %p to %lx\n", rs_base_virt, vma->vm_start);
 	return 0;
 }
 
@@ -106,6 +109,7 @@ int __init rs_init(void)
 		return -EBUSY;
 	}
 	MSG("remap phys=%x to virt=%p\n", rs_start, rs_base_virt);
+	MSG("remap %d page(s) %d MB\n", remap_size>>PAGE_SHIFT, remap_size>>20);
 	/* Create /proc entry */
 	rs_proc_entry = proc_create(DEVICE_NAME, 0, NULL, &proc_rs_operations);
 	if(rs_proc_entry == NULL)

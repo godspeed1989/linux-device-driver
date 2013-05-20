@@ -4,10 +4,10 @@ KERNELBUILD := /lib/modules/$(shell uname -r)/build
 
 all: mod test
 
-mod:
+mod: rs.c share.h
 	make -C $(KERNELBUILD) M=$(shell pwd) modules
 
-test: test.c
+test: test.c share.h
 	$(CC) -o $@ $<
 
 clean:

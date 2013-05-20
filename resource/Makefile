@@ -12,6 +12,7 @@ test: test.c
 
 clean:
 	@rm -rf *.o *.mod.c .*.cmd *.markers *.order .tmp_versions *.symvers
-clean_all: clean
-	@rm -rf *.ko
+
+dist_clean: clean
+	@rm -rf *.ko test
 
