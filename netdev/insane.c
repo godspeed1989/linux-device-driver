@@ -3,6 +3,9 @@
  */
 #include <linux/module.h>
 #include <linux/netdevice.h>
+#include <linux/neighbour.h>
+#include <linux/if_arp.h>
+#include <net/net_namespace.h>
 #include "insane.h"
 
 int insane_open(struct net_device *dev)
@@ -30,7 +33,10 @@ netdev_tx_t insane_xmit(struct sk_buff *skb, struct net_device *dev)
 		dev_queue_xmit(skb);
 		return NETDEV_TX_OK;
 	}
-	return NETDEV_TX_BUSY;
+	// real net interface is not availiable
+	idev->priv_stats.tx_dropped++;
+	dev_kfree_skb(skb);
+	return NETDEV_TX_OK;
 }
 
 struct net_device_stats* insane_get_stats(struct net_device *dev)
@@ -47,18 +53,27 @@ int insane_init(struct net_device *dev)
 	MSG("netdev init\n");
 	idev = container_of(dev, struct insane_priv, net_dev);
 
-	slave = __dev_get_by_name(dev, real_dev);//TODO
-	if(slave != NULL)
+	// don't forget use dev_put() to release slave
+	slave = dev_get_by_name(&init_net, real_dev);
+	if(!slave)
 	{
-		MSG("capture real net dev\n");
-		ether_setup(dev);
-		idev->priv_device = slave;
-		// TODO more init
-		memcpy(dev->dev_addr, slave->dev_addr, sizeof(slave->dev_addr));
-		memcpy(dev->broadcast, slave->broadcast, sizeof(slave->broadcast));
-		return 0;
+		MSG("no %s dev exist\n", real_dev);
+		return -ENODEV;
 	}
-    return -ENODEV;
+	if(slave->type != ARPHRD_ETHER && slave->type != ARPHRD_LOOPBACK)
+	{
+		MSG("%s is not ethernet device\n", real_dev);
+		dev_put(slave);
+		return -EINVAL;
+	}
+    MSG("capture real net dev\n");
+    // setup header_ops, type, hard_header_len, addr_len, mtu, etc.
+	ether_setup(dev);
+	idev->priv_device = slave;
+	
+	memcpy(dev->dev_addr, slave->dev_addr, sizeof(slave->dev_addr));
+	memcpy(dev->broadcast, slave->broadcast, sizeof(slave->broadcast));
+	return 0;
 }
 
 /**
@@ -97,6 +112,7 @@ module_init(init_insane_module);
 void __exit exit_insane_module(void)
 {
 	unregister_netdev(&insane_dev.net_dev);
+	dev_put(insane_dev.priv_device);
 }
 module_exit(exit_insane_module);
 MODULE_LICENSE("GPL");
