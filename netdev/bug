@@ -1,0 +1,88 @@
+[ 4909.639789] BUG: unable to handle kernel paging request at f81ab05c
+[ 4909.639795] IP: [<c147a908>] dev_get_stats+0x18/0x100
+[ 4909.639807] *pde = 34822067 *pte = 00000000 
+[ 4909.639812] Oops: 0000 [#1] SMP 
+[ 4909.639817] Modules linked in: kvm_intel kvm bnep rfcomm bluetooth vesafb joydev snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_pcm snd_seq_midi acer_wmi sparse_keymap nvidia(P) snd_rawmidi uvcvideo videodev lib80211_crypt_tkip snd_seq_midi_event snd_seq psmouse snd_timer snd_seq_device serio_raw wl(P) snd cfg80211 lib80211 mei(C) soundcore snd_page_alloc wmi video mac_hid lp parport usbhid hid tg3 [last unloaded: insane]
+[ 4909.639861] 
+[ 4909.639865] Pid: 976, comm: irqbalance Tainted: P         C O 3.2.0-36-generic #57-Ubuntu Acer            Aspire 4741                    /Aspire 4741                    
+[ 4909.639873] EIP: 0060:[<c147a908>] EFLAGS: 00010286 CPU: 2
+[ 4909.639878] EIP is at dev_get_stats+0x18/0x100
+[ 4909.639881] EAX: f81ab020 EBX: f038be30 ECX: ef606de0 EDX: f038be30
+[ 4909.639884] ESI: ef22b800 EDI: ef22b800 EBP: f038bd98 ESP: f038bd88
+[ 4909.639887]  DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+[ 4909.639890] Process irqbalance (pid: 976, ti=f038a000 task=f4314c20 task.ti=f038a000)
+[ 4909.639893] Stack:
+[ 4909.639895]  f038bd98 ef22b800 ef606de0 ef22b800 f038bef4 c147acf8 ef606de0 c1782234
+[ 4909.639904]  f6e82800 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+[ 4909.639912]  00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+[ 4909.639921] Call Trace:
+[ 4909.639926]  [<c147acf8>] dev_seq_printf_stats+0x28/0x190
+[ 4909.639934]  [<c147ceb2>] dev_seq_show+0x12/0x30
+[ 4909.639941]  [<c11510a3>] seq_read+0x253/0x380
+[ 4909.639946]  [<c1150e50>] ? seq_lseek+0x170/0x170
+[ 4909.639952]  [<c11811e4>] proc_reg_read+0x64/0xa0
+[ 4909.639959]  [<c113352c>] vfs_read+0x8c/0x160
+[ 4909.639963]  [<c1181180>] ? proc_reg_write+0xa0/0xa0
+[ 4909.639968]  [<c113363d>] sys_read+0x3d/0x70
+[ 4909.639974]  [<c15767a4>] syscall_call+0x7/0xb
+[ 4909.639980]  [<c1570000>] ? handle_eviocgbit.isra.6+0x65/0xed
+[ 4909.639983] Code: ff 29 c8 39 c1 0f 87 36 ff ff ff eb f4 8d b6 00 00 00 00 55 89 e5 57 56 53 83 ec 04 66 66 66 66 90 89 c6 8b 80 e0 00 00 00 89 d3 <8b> 78 3c 89 45 f0 85 ff 74 6e f6 c3 01 89 d7 ba b8 00 00 00 0f 
+[ 4909.640033] EIP: [<c147a908>] dev_get_stats+0x18/0x100 SS:ESP 0068:f038bd88
+[ 4909.640040] CR2: 00000000f81ab05c
+[ 4909.640044] ---[ end trace d5081a29e5df117d ]---
+
+
+[ 4909.640338] init: irqbalance main process (976) killed by KILL signal
+[ 4915.205468] BUG: unable to handle kernel paging request at f81ab05c
+[ 4915.205480] IP: [<c147a908>] dev_get_stats+0x18/0x100
+[ 4915.205496] *pde = 34822067 *pte = 00000000 
+[ 4915.205504] Oops: 0000 [#2] SMP 
+[ 4915.205510] Modules linked in: kvm_intel kvm bnep rfcomm bluetooth vesafb joydev snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_pcm snd_seq_midi acer_wmi sparse_keymap nvidia(P) snd_rawmidi uvcvideo videodev lib80211_crypt_tkip snd_seq_midi_event snd_seq psmouse snd_timer snd_seq_device serio_raw wl(P) snd cfg80211 lib80211 mei(C) soundcore snd_page_alloc wmi video mac_hid lp parport usbhid hid tg3 [last unloaded: insane]
+[ 4915.205578] 
+[ 4915.205584] Pid: 18036, comm: sudo Tainted: P      D  C O 3.2.0-36-generic #57-Ubuntu Acer            Aspire 4741                    /Aspire 4741                    
+[ 4915.205597] EIP: 0060:[<c147a908>] EFLAGS: 00010286 CPU: 1
+[ 4915.205604] EIP is at dev_get_stats+0x18/0x100
+[ 4915.205608] EAX: f81ab020 EBX: ef0ddab4 ECX: 00000000 EDX: ef0ddab4
+[ 4915.205613] ESI: ef22b800 EDI: ee701840 EBP: ef0dda88 ESP: ef0dda78
+[ 4915.205618]  DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+[ 4915.205624] Process sudo (pid: 18036, ti=ef0dc000 task=f43032c0 task.ti=ef0dc000)
+[ 4915.205628] Stack:
+[ 4915.205631]  ef0dda88 ef0ddb98 f42ccc3c ee701840 ef0ddc04 c148cb04 ef22b990 00000000
+[ 4915.205645]  ef0ddac4 ef0ddadc c1289be8 f42cc974 f42ccba4 ef1d4600 ef22b800 00000000
+[ 4915.205658]  00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+[ 4915.205671] Call Trace:
+[ 4915.205681]  [<c148cb04>] rtnl_fill_ifinfo+0x414/0x920
+[ 4915.205692]  [<c1289be8>] ? blk_rq_map_sg+0x78/0x260
+[ 4915.205704]  [<c10edafd>] ? get_page_from_freelist+0x13d/0x2a0
+[ 4915.205713]  [<c12b357f>] ? nla_parse+0x1f/0xa0
+[ 4915.205721]  [<c148d12b>] rtnl_dump_ifinfo+0x11b/0x1a0
+[ 4915.205731]  [<c14a049a>] netlink_dump+0x5a/0x1f0
+[ 4915.205738]  [<c14a1582>] netlink_dump_start+0x142/0x1b0
+[ 4915.205745]  [<c148d596>] rtnetlink_rcv_msg+0x206/0x260
+[ 4915.205752]  [<c148d010>] ? rtnl_fill_ifinfo+0x920/0x920
+[ 4915.205759]  [<c148d010>] ? rtnl_fill_ifinfo+0x920/0x920
+[ 4915.205766]  [<c148d390>] ? __rtnl_unlock+0x20/0x20
+[ 4915.205773]  [<c14a2c1e>] netlink_rcv_skb+0x8e/0xb0
+[ 4915.205780]  [<c148b71c>] rtnetlink_rcv+0x1c/0x30
+[ 4915.205786]  [<c14a25b9>] netlink_unicast+0x239/0x290
+[ 4915.205793]  [<c14a2822>] netlink_sendmsg+0x212/0x350
+[ 4915.205804]  [<c146b9f7>] sock_sendmsg+0xf7/0x120
+[ 4915.205814]  [<c129eded>] ? radix_tree_lookup_slot+0xd/0x10
+[ 4915.205823]  [<c10e6810>] ? find_get_page+0x20/0xa0
+[ 4915.205830]  [<c10e9123>] ? filemap_fault+0xe3/0x370
+[ 4915.205839]  [<c1031f35>] ? __wake_up+0x45/0x60
+[ 4915.205846]  [<c12a6aa2>] ? _copy_from_user+0x42/0x60
+[ 4915.205854]  [<c146d07f>] ? move_addr_to_kernel+0x5f/0x70
+[ 4915.205862]  [<c146da4e>] sys_sendto+0x10e/0x150
+[ 4915.205871]  [<c1107ef8>] ? handle_mm_fault+0x108/0x210
+[ 4915.205881]  [<c1579980>] ? vmalloc_fault+0xf4/0xf4
+[ 4915.205888]  [<c1579ba7>] ? do_page_fault+0x227/0x490
+[ 4915.205895]  [<c12a690f>] ? __copy_from_user_ll+0x1f/0x40
+[ 4915.205903]  [<c146e460>] sys_socketcall+0x1b0/0x2c0
+[ 4915.205911]  [<c15767a4>] syscall_call+0x7/0xb
+[ 4915.205919]  [<c1570000>] ? handle_eviocgbit.isra.6+0x65/0xed
+[ 4915.205923] Code: ff 29 c8 39 c1 0f 87 36 ff ff ff eb f4 8d b6 00 00 00 00 55 89 e5 57 56 53 83 ec 04 66 66 66 66 90 89 c6 8b 80 e0 00 00 00 89 d3 <8b> 78 3c 89 45 f0 85 ff 74 6e f6 c3 01 89 d7 ba b8 00 00 00 0f 
+[ 4915.206002] EIP: [<c147a908>] dev_get_stats+0x18/0x100 SS:ESP 0068:ef0dda78
+[ 4915.206013] CR2: 00000000f81ab05c
+[ 4915.206019] ---[ end trace d5081a29e5df117e ]---
+

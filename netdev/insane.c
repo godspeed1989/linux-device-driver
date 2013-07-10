@@ -69,8 +69,8 @@ static int insane_init(struct net_device *dev)
 		dev_put(slave);
 		return -EINVAL;
 	}
-    MSG("captured real net dev\n");
-    // setup header_ops, type, hard_header_len, addr_len, mtu, etc.
+	MSG("captured real net dev\n");
+	// setup header_ops, type, hard_header_len, addr_len, mtu, etc.
 	ether_setup(dev);
 	idev->priv_device = slave;
 
