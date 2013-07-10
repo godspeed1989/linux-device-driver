@@ -2,10 +2,13 @@ obj-m := insane.o
 
 KERNELBUILD := /lib/modules/$(shell uname -r)/build
 
-all: module
+all: module test
 
 module:
 	make -C $(KERNELBUILD) M=$(shell pwd) modules
+
+test: test.c
+	$(CC) $^ -o $@
 
 clean:
 	@rm -rf *.o *.mod.c .*.cmd *.markers *.order .tmp_versions *.symvers 

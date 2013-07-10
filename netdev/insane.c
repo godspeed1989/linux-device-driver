@@ -18,7 +18,8 @@ static int insane_open(struct net_device *dev)
 static int insane_stop(struct net_device *dev)
 {
 	MSG("netdev close\n");
-	netif_stop_queue(dev);
+	if (!netif_queue_stopped(dev))
+		netif_stop_queue(dev);;
 	return 0;
 }
 
@@ -100,7 +101,7 @@ static void insane_setup(struct net_device *dev)
 
 static struct insane_priv *insane_dev;
 
-int __init init_insane_module(void)
+static int __init init_insane_module(void)
 {
 	int ret;
 	struct net_device *ndev;
@@ -124,16 +125,24 @@ int __init init_insane_module(void)
 }
 module_init(init_insane_module);
 
-void __exit exit_insane_module(void)
+static void __exit exit_insane_module(void)
 {
+	struct net_device *ndev;
 	if(insane_dev)
 	{
-		if(insane_dev->priv_device)
-			dev_put(insane_dev->priv_device);
-		if(insane_dev->net_dev)
+		ndev = insane_dev->priv_device;
+		if(ndev)
+			dev_put(ndev);
+		ndev = insane_dev->net_dev;
+		if(ndev)
 		{
-			unregister_netdev(insane_dev->net_dev);
-			free_netdev(insane_dev->net_dev);
+			if(netif_running(ndev))
+			{
+				MSG("netif running, detach it\n");
+				netif_device_detach(ndev);
+			}
+			unregister_netdev(ndev);
+			free_netdev(ndev);
 		}
 	}
 }
