@@ -100,7 +100,7 @@ static struct insane_priv insane_dev =
 
 int __init init_insane_module(void)
 {
-	if(register_netdev(&insane_dev.net_dev))
+	if(register_netdevice(&insane_dev.net_dev))
 	{
 		MSG("can't register\n");
 		return -EIO;
@@ -111,7 +111,7 @@ module_init(init_insane_module);
 
 void __exit exit_insane_module(void)
 {
-	unregister_netdev(&insane_dev.net_dev);
+	unregister_netdevice(&insane_dev.net_dev);
 	dev_put(insane_dev.priv_device);
 }
 module_exit(exit_insane_module);
