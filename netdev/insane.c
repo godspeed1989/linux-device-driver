@@ -8,28 +8,30 @@
 #include <net/net_namespace.h>
 #include "insane.h"
 
-int insane_open(struct net_device *dev)
+static int insane_open(struct net_device *dev)
 {
 	MSG("netdev open\n");
+	netif_start_queue(dev);
 	return 0;
 }
 
-int insane_stop(struct net_device *dev)
+static int insane_stop(struct net_device *dev)
 {
 	MSG("netdev close\n");
+	netif_stop_queue(dev);
 	return 0;
 }
 
-netdev_tx_t insane_xmit(struct sk_buff *skb, struct net_device *dev)
+static netdev_tx_t insane_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct insane_priv *idev = container_of(dev, struct insane_priv, net_dev);
+	struct insane_priv *idev;
+	idev = netdev_priv(dev);
 
 	if(idev->priv_device)
 	{
 		idev->priv_stats.tx_packets++;
 		idev->priv_stats.tx_bytes += skb->len;
 		skb->dev = idev->priv_device;
-		skb->priority = 1;
 		dev_queue_xmit(skb);
 		return NETDEV_TX_OK;
 	}
@@ -39,19 +41,20 @@ netdev_tx_t insane_xmit(struct sk_buff *skb, struct net_device *dev)
 	return NETDEV_TX_OK;
 }
 
-struct net_device_stats* insane_get_stats(struct net_device *dev)
+static struct net_device_stats* insane_get_stats(struct net_device *dev)
 {
 	struct insane_priv *idev;
-	idev = container_of(dev, struct insane_priv, net_dev);
+	MSG("netdev get stats\n");
+	idev = netdev_priv(dev);
 	return &idev->priv_stats;
 }
 
-int insane_init(struct net_device *dev)
+static int insane_init(struct net_device *dev)
 {
 	struct net_device *slave;
 	struct insane_priv *idev;
 	MSG("netdev init\n");
-	idev = container_of(dev, struct insane_priv, net_dev);
+	idev = netdev_priv(dev);
 
 	// don't forget use dev_put() to release slave
 	slave = dev_get_by_name(&init_net, real_dev);
@@ -66,13 +69,13 @@ int insane_init(struct net_device *dev)
 		dev_put(slave);
 		return -EINVAL;
 	}
-    MSG("capture real net dev\n");
+    MSG("captured real net dev\n");
     // setup header_ops, type, hard_header_len, addr_len, mtu, etc.
 	ether_setup(dev);
 	idev->priv_device = slave;
-	
-	memcpy(dev->dev_addr, slave->dev_addr, sizeof(slave->dev_addr));
-	memcpy(dev->broadcast, slave->broadcast, sizeof(slave->broadcast));
+
+	memcpy(dev->dev_addr, slave->dev_addr, sizeof(dev->dev_addr));
+	memcpy(dev->broadcast, slave->broadcast, sizeof(dev->broadcast));
 	return 0;
 }
 
@@ -88,31 +91,51 @@ static struct net_device_ops insane_ops =
 	.ndo_get_stats   = insane_get_stats,
 };
 
-static struct insane_priv insane_dev =
+static void insane_setup(struct net_device *dev)
 {
-	.net_dev =
-	{
-		.name       = "insane",
-		.netdev_ops = &insane_ops,
-	},
-	.priv_device = NULL,   // setup at init
-};
+	MSG("netdev setup\n");
+	dev->netdev_ops = &insane_ops;
+	dev->flags = 0;
+}
+
+static struct insane_priv *insane_dev;
 
 int __init init_insane_module(void)
 {
-	if(register_netdevice(&insane_dev.net_dev))
+	int ret;
+	struct net_device *ndev;
+
+	ndev = alloc_netdev(sizeof(struct insane_priv), DEV_NAME, insane_setup);
+	if(!ndev)
+		return -ENOMEM;
+
+	insane_dev = netdev_priv(ndev);
+	insane_dev->priv_device = NULL;
+
+	ret = register_netdev(ndev);
+	if(ret)
 	{
 		MSG("can't register\n");
-		return -EIO;
+		free_netdev(ndev);
+		return ret;
 	}
+	MSG("register succeed\n");
 	return 0;
 }
 module_init(init_insane_module);
 
 void __exit exit_insane_module(void)
 {
-	unregister_netdevice(&insane_dev.net_dev);
-	dev_put(insane_dev.priv_device);
+	if(insane_dev)
+	{
+		if(insane_dev->priv_device)
+			dev_put(insane_dev->priv_device);
+		if(insane_dev->net_dev)
+		{
+			unregister_netdev(insane_dev->net_dev);
+			free_netdev(insane_dev->net_dev);
+		}
+	}
 }
 module_exit(exit_insane_module);
 MODULE_LICENSE("GPL");
