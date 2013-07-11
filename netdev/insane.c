@@ -6,6 +6,7 @@
 #include <linux/neighbour.h>
 #include <linux/if_arp.h>
 #include <net/net_namespace.h>
+#include <linux/sched.h>
 #include "insane.h"
 
 static int insane_open(struct net_device *dev)
@@ -45,17 +46,17 @@ static netdev_tx_t insane_xmit(struct sk_buff *skb, struct net_device *dev)
 static struct net_device_stats* insane_get_stats(struct net_device *dev)
 {
 	struct insane_priv *idev;
-	MSG("netdev get stats\n");
+	MSG("netdev get stats by %s\n", current->comm);
 	idev = netdev_priv(dev);
 	return &idev->priv_stats;
 }
 
+/* It is invoked by register_netdev() */
 static int insane_init(struct net_device *dev)
 {
 	struct net_device *slave;
 	struct insane_priv *idev;
 	MSG("netdev init\n");
-	idev = netdev_priv(dev);
 
 	// don't forget use dev_put() to release slave
 	slave = dev_get_by_name(&init_net, real_dev);
@@ -70,9 +71,9 @@ static int insane_init(struct net_device *dev)
 		dev_put(slave);
 		return -EINVAL;
 	}
-	MSG("captured real net dev\n");
-	// setup header_ops, type, hard_header_len, addr_len, mtu, etc.
-	ether_setup(dev);
+	MSG("captured real net dev %s\n", slave->name);
+
+	idev = netdev_priv(dev);
 	idev->priv_device = slave;
 
 	memcpy(dev->dev_addr, slave->dev_addr, sizeof(dev->dev_addr));
@@ -83,7 +84,7 @@ static int insane_init(struct net_device *dev)
 /**
  * variables and init&exit functions
  */
-static struct net_device_ops insane_ops =
+static const struct net_device_ops insane_ops =
 {
 	.ndo_init        = insane_init,
 	.ndo_open        = insane_open,
@@ -95,8 +96,11 @@ static struct net_device_ops insane_ops =
 static void insane_setup(struct net_device *dev)
 {
 	MSG("netdev setup\n");
+	// setup header_ops, type, hard_header_len, addr_len, mtu, etc.
+	ether_setup(dev);
 	dev->netdev_ops = &insane_ops;
-	dev->flags = 0;
+	dev->flags     |= IFF_NOARP;
+	dev->features  |= NETIF_F_HW_CSUM;
 }
 
 static struct insane_priv *insane_dev;
@@ -111,6 +115,7 @@ static int __init init_insane_module(void)
 		return -ENOMEM;
 
 	insane_dev = netdev_priv(ndev);
+	insane_dev->net_dev = ndev;
 	insane_dev->priv_device = NULL;
 
 	ret = register_netdev(ndev);

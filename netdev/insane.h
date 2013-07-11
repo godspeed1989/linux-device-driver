@@ -5,7 +5,7 @@
 
 #define MSG(string, args...)  printk(DEV_NAME ": " string, ##args)
 
-const char * real_dev = "eth0";
+const char * real_dev = "lo";
 
 struct insane_priv
 {
